@@ -4,7 +4,7 @@ Please read this!
 Before opening a new issue, make sure to search for keywords in the issues
 filtered by the "enhancement" label:
 
-- https://gitlab.com/curs3_w4ll/openapi-generator-kotlintoolchain-plugin/issues?label_name%5B%5D=enhancement
+- https://gitlab.com/corthx/openapi-generator-kotlintoolchain-plugin/issues?label_name%5B%5D=enhancement
 
 and verify the issue you're about to submit isn't a duplicate.
 --->

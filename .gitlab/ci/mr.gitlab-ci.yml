@@ -1,6 +1,6 @@
 ---
 
 include:
-  - component: gitlab.com/curs3_w4ll/mr-title-lint/mr-title-lint@1.0.0
+  - component: gitlab.com/corthx/mr-title-lint/mr-title-lint@1.0.0
     inputs:
       regex: '^(feat|fix|refactor|docs|style|perf|test|chore|security)(\([a-zA-Z0-9_-]+\))?: [A-Z].{2,71} #[0-9]+$'

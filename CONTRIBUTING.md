@@ -1,20 +1,20 @@
 # Contributing
 
 Thank you for your interest in contributing! This project is hosted
-on [GitLab](https://gitlab.com/curs3_w4ll/openapi-generator-kotlintoolchain-plugin) — please open issues and merge
+on [GitLab](https://gitlab.com/corthx/openapi-generator-kotlintoolchain-plugin) — please open issues and merge
 requests there. The GitHub repository is a read-only mirror.
 
 ## Reporting Bugs
 
 Open an issue on GitLab using
-the [Bug Report](https://gitlab.com/curs3_w4ll/openapi-generator-kotlintoolchain-plugin/-/work_items/new?description_template=Bug%20Report)
+the [Bug Report](https://gitlab.com/corthx/openapi-generator-kotlintoolchain-plugin/-/work_items/new?description_template=Bug%20Report)
 template. Include as much detail as possible — environment, reproduction steps, and a minimal `module.yaml` + OpenAPI
 spec if applicable.
 
 ## Suggesting Features
 
 Open an issue on GitLab using
-the [Feature Request](https://gitlab.com/curs3_w4ll/openapi-generator-kotlintoolchain-plugin/-/work_items/new?description_template=Feature%20Request)
+the [Feature Request](https://gitlab.com/corthx/openapi-generator-kotlintoolchain-plugin/-/work_items/new?description_template=Feature%20Request)
 template. Describe the problem you're trying to solve and your proposed solution.
 
 ## Submitting Code

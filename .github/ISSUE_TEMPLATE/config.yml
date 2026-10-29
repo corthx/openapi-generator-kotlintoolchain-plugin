@@ -1,8 +1,9 @@
+---
 blank_issues_enabled: false
 contact_links:
   - name: 🦊 Open an issue on GitLab (source of truth)
-    url: https://gitlab.com/curs3_w4ll/openapi-generator-kotlintoolchain-plugin/-/issues/new
+    url: https://gitlab.com/corthx/openapi-generator-kotlintoolchain-plugin/-/issues/new
     about: This GitHub repository is a mirror. All issues and merge requests must be filed on GitLab.
   - name: 📦 GitLab project home
-    url: https://gitlab.com/curs3_w4ll/openapi-generator-kotlintoolchain-plugin
+    url: https://gitlab.com/corthx/openapi-generator-kotlintoolchain-plugin
     about: Browse the source, releases, and CI pipelines on GitLab.

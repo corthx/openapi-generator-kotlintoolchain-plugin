@@ -217,7 +217,7 @@ mechanism the upstream generator uses. See
 for worked examples.
 
 If you depend on one of the unsupported settings, please open an
-[enhancement issue](https://gitlab.com/curs3_w4ll/openapi-generator-kotlintoolchain-plugin/-/issues/new?issuable_template=Feature%20Request)
+[enhancement issue](https://gitlab.com/corthx/openapi-generator-kotlintoolchain-plugin/-/issues/new?issuable_template=Feature%20Request)
 so it can be tracked — the migration guide will be updated to link to it.
 
 ## Behavioural differences

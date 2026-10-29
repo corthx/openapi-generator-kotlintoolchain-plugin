@@ -7,7 +7,7 @@ It exposes a `generateOpenAPI` task that reads an OpenAPI specification file, ru
 automatically registers the produced sources as source sets — Kotlin and Java, main and test — no manual wiring needed.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![GitLab](https://img.shields.io/badge/source-GitLab-orange.svg)](https://gitlab.com/curs3_w4ll/openapi-generator-kotlintoolchain-plugin)
+[![GitLab](https://img.shields.io/badge/source-GitLab-orange.svg)](https://gitlab.com/corthx/openapi-generator-kotlintoolchain-plugin)
 
 ## Installation
 
@@ -17,7 +17,7 @@ plugin is via a **git submodule**.
 ### 1. Add the submodule
 
 ```sh
-git submodule add git@gitlab.com:curs3_w4ll/openapi-generator-kotlintoolchain-plugin.git openapi-generator-plugin
+git submodule add git@gitlab.com:corthx/openapi-generator-kotlintoolchain-plugin.git openapi-generator-plugin
 ```
 
 ### 2. Register the plugin in `project.yaml`
