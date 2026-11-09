@@ -11,7 +11,7 @@ renovate:
   needs: []
   dependencies: []
   image:
-    name: renovate/renovate:43.286.1
+    name: renovate/renovate:43.288.0
     entrypoint: [""]
   extends:
     - .not-interruptible
