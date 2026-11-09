@@ -7,14 +7,17 @@ check:
       artifacts: false
   extends:
     - .default-retry
-    - .default-before_script
     - .interruptible
+    - .toolset:java
   cache:
     - !reference [".mise-cache", cache]
     - !reference [".kotlin-cache", cache]
   rules:
-    - !reference [".if-merge-request", rules]
-    - !reference [".if-default-branch", rules]
-    - !reference [".if-release", rules]
+    - !reference [".check:rules", rules]
+  before_script:
+    - !reference [".mise-before_script", before_script]
+  variables:
+    # Modules per `./kotlin check` run; see the script header for why.
+    KOTLIN_CHECK_BATCH_SIZE: "6"
   script:
-    - ./kotlin check
+    - bash .gitlab/ci/scripts/kotlin-check-batched.sh

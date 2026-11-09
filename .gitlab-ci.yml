@@ -24,6 +24,9 @@ stages:
   - release
 
 workflow:
+  # Applies the PIPELINE_NAME the rules below set; without it the variable is
+  # inert. Rules setting none resolve to an empty string, leaving pipelines unnamed.
+  name: "$PIPELINE_NAME"
   auto_cancel:
     on_new_commit: interruptible
   rules:
@@ -41,6 +44,11 @@ workflow:
         # (which are file-scoped and cannot read inputs) can consume them.
         RELEASE: "true"
         VERSION: "$[[ inputs.version ]]"
+    # Must stay last: the rules above set the variables the job rules read.
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      variables:
+        PIPELINE_NAME: 'Manual run'
+        MANUAL_RUN: "true"
 
 include:
   - local: .gitlab/ci/*.gitlab-ci.yml

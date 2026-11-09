@@ -9,13 +9,14 @@
 renovate:
   stage: maintenance
   needs: []
+  dependencies: []
   image:
     name: renovate/renovate:43.286.1
     entrypoint: [""]
   extends:
     - .not-interruptible
   rules:
-    - !reference [".if-schedule-renovate", rules]
+    - !reference [".renovate:rules", rules]
   variables:
     LOG_LEVEL: info
     RENOVATE_PLATFORM: gitlab

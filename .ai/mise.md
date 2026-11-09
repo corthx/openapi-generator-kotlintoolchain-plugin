@@ -11,6 +11,7 @@ separate what is needed everywhere from what is only useful locally.
 |-----------------|--------------------------------------------------------------------------------|
 | `mise.toml`     | Tools and tasks needed in both CI and local dev                                |
 | `mise.dev.toml` | Dev-only tools and hooks, loaded only when `MISE_ENV=dev`                      |
+| `mise.ci.toml`  | CI-only settings, loaded only when `MISE_ENV=ci`                               |
 | `.miserc.toml`  | Sets the default env to `dev` for local dev environments                       |
 | `.mise/*.toml`  | Topical task definitions, included via `[task_config] includes` in `mise.toml` |
 
@@ -20,15 +21,15 @@ The project uses mise envs to load different configuration depending on the envi
 
 - **Local dev** (default): `.miserc.toml` sets `env = ["dev"]`, so mise loads `mise.toml` + `mise.dev.toml`.
   The enter hook runs automatically, installing tools and setting up git hooks.
-- **CI**: `MISE_ENV=ci` is set in `.gitlab/ci/global.gitlab-ci.yml`, so only `mise.toml` is loaded.
-  No enter hook, no dev-only tools.
-
-A `mise.ci.toml` can be added in the future for CI-specific overrides, but is not needed today.
+- **CI**: `MISE_ENV=ci` is set in `.gitlab/ci/global.gitlab-ci.yml`, so `mise.toml` + `mise.ci.toml` are loaded.
+  No enter hook, no dev-only tools. `mise.ci.toml` disables tool auto-install so `mise run` cannot undo the per-job
+  tool sets (`.toolset:*` in `.gitlab/ci/global.gitlab-ci.yml`).
 
 ## Adding Tools
 
 - Add tools used in **both CI and local dev** to `mise.toml`.
 - Add tools used **only locally** (e.g. linters not run in CI) to `mise.dev.toml`.
+- A tool needed by a CI job must also be added to that job's `.toolset:*` set in `.gitlab/ci/global.gitlab-ci.yml`.
 - All tools must use **pinned versions** (e.g. `actionlint = "1.7.12"`). Never use `latest` or other floating
   references. Look up the current stable version and pin it explicitly.
 

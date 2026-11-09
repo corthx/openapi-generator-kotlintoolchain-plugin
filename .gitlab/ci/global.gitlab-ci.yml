@@ -6,15 +6,20 @@
 # do not cross the wildcard include in .gitlab-ci.yml.
 
 default:
+  # The `-debian` flavor, not the bare tag: the bare tag is a minimal image
+  # with no shell at all, which the runner cannot start a job in. Neither ships
+  # node or python any more, so mise.toml pins them for the npm/pipx tools.
+  #
   # entrypoint: [""] overrides the image's ENTRYPOINT ["mise"], otherwise GitLab
   # Runner's job shell would launch as `mise -c <script>` and mise would reject
   # the unknown `-c` flag before our script runs.
   image:
-    name: jdxcode/mise:2026.7.16
+    name: jdxcode/mise:2026.10.3-debian
     entrypoint: [""]
 
 variables:
   MISE_DATA_DIR: $CI_PROJECT_DIR/.mise-data
+  # Loads mise.ci.toml on top of mise.toml, and leaves mise.dev.toml out.
   MISE_ENV: ci
   MISE_YES: "1"
   PRE_COMMIT_HOME: $CI_PROJECT_DIR/.pre-commit-data
@@ -43,11 +48,32 @@ variables:
 .not-interruptible:
   interruptible: false
 
-.default-before_script:
+# Per-job tool sets. Adding a tool to mise.toml does not make it available to a
+# job — add it to the sets that need it.
+.toolset:java:
+  variables:
+    TOOLSET: java
+    TOOLSET_TOOLS: "java"
+
+.toolset:lint:
+  variables:
+    TOOLSET: lint
+    # java: ktlint is a JAR launched through the JVM.
+    TOOLSET_TOOLS: "java node python pre-commit ktlint actionlint markdownlint-cli2 pipx pipx:yamllint"
+
+.toolset:release:
+  variables:
+    TOOLSET: release
+    TOOLSET_TOOLS: "git-cliff"
+
+# Base before_script: install the job's mise-managed tools and put them on PATH.
+# Pair it with one of the `.toolset:*` sets above.
+.mise-before_script:
   before_script:
     - mise trust --yes
-    - mise install
-    # Activate mise's managed env (JAVA_HOME, PATH with all installed tools)
+    # Unquoted: TOOLSET_TOOLS is a space-separated list that must word-split.
+    - mise install $TOOLSET_TOOLS
+    # Activate mise's managed env (JAVA_HOME, PATH with the installed tools)
     # into the shell so subsequent script lines can call tools directly
     # without a `mise exec --` prefix.
     - eval "$(mise env -s bash)"
@@ -57,6 +83,11 @@ variables:
     key:
       files:
         - mise.toml
+        - mise.ci.toml
+      # One archive per tool set. Sharing a key across sets means the last job to
+      # finish overwrites the archive with its own subset, and the next pipeline
+      # reinstalls from scratch.
+      prefix: $TOOLSET
     paths:
       - $MISE_DATA_DIR/
     policy: pull-push

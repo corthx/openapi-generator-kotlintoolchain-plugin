@@ -3,20 +3,22 @@
 lint:
   stage: lint
   needs: []
+  dependencies: []
   extends:
     - .default-retry
-    - .default-before_script
     - .interruptible
+    - .toolset:lint
   cache:
     - !reference [".mise-cache", cache]
     - !reference [".pre-commit-cache", cache]
   rules:
-    - !reference [".if-merge-request", rules]
-    - !reference [".if-default-branch", rules]
+    - !reference [".lint:rules", rules]
   variables:
     # Full git history is required so the merge-base commit is reachable
     # when pre-commit diffs against $CI_MERGE_REQUEST_DIFF_BASE_SHA.
     GIT_DEPTH: "0"
+  before_script:
+    - !reference [".mise-before_script", before_script]
   script:
     - |
       if [ "$CI_PIPELINE_SOURCE" = "merge_request_event" ]; then

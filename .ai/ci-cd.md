@@ -113,7 +113,9 @@ choice affecting when it runs. Adding a job and forgetting `needs:` is a bug, no
 Defines reusable building blocks:
 
 - **`.default-retry`** -- retry policy (max 2 retries for infra failures)
-- **`.default-before_script`** -- standard before_script (FOSS mode, GOPATH, utils)
+- **`.mise-before_script`** -- installs the job's mise tool set (`mise install $TOOLSET_TOOLS`) and activates it
+- **`.toolset:*`** -- per-job tool sets (`TOOLSET` / `TOOLSET_TOOLS`). Adding a tool to `mise.toml` does not make it
+  available to a job: add it to every set that needs it. `.mise-cache` is keyed per `$TOOLSET`
 - **`.use-docker-in-docker`** -- Docker-in-Docker setup
 - **Cache definitions** -- `.mise-cache`, `.kotlin-toolchain-cache`, `.assets-cache`, etc.
 
@@ -142,8 +144,11 @@ Key pipeline types:
 
 1. Add the job to the appropriate `.gitlab/ci/*.gitlab-ci.yml` file (or create a new one -- it auto-includes via
    wildcard).
-2. Define rules in `rules.gitlab-ci.yml` using existing condition anchors and file patterns.
-3. Extend shared foundations (`.default-retry`, `.default-before_script`, service mixins).
+2. Define a `.<job>:rules` composite in `rules.gitlab-ci.yml` from the existing condition anchors and file patterns,
+   and reference it from the job with `!reference [".<job>:rules", rules]`. Never reference a bare `.if-*` anchor
+   from another file.
+3. Extend shared foundations (`.default-retry`, a `.toolset:*` set, service mixins) and add
+   `!reference [".mise-before_script", before_script]` to its `before_script:` if it uses mise tools.
 4. Declare `needs:` explicitly (see [Job Dependencies (DAG)](#job-dependencies-dag)). Use `needs: []` if there is no
    upstream dependency. Stage choice is for UI grouping only and must not be relied on for ordering.
 

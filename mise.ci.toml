@@ -1,0 +1,6 @@
+# Loaded when MISE_ENV=ci.
+[settings]
+# `mise run` installs every missing tool in the config, not just the task's, which would undo
+# the per-job tool filtering in .gitlab/ci/global.gitlab-ci.yml.
+task.run_auto_install = false
+not_found_auto_install = false

@@ -3,13 +3,14 @@
 deps-digest:
   stage: maintenance
   needs: []
+  dependencies: []
   image:
     name: alpine:3.24
   extends:
     - .default-retry
     - .not-interruptible
   rules:
-    - !reference [".if-schedule-deps-digest", rules]
+    - !reference [".deps-digest:rules", rules]
   script:
     - apk add --no-cache bash curl jq coreutils
     - bash .gitlab/ci/scripts/deps-digest.sh

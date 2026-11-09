@@ -1,29 +1,99 @@
 ---
 
-# Centralized condition anchors for all jobs in this pipeline.
-# Jobs reference these via `!reference [".some-key", rules]` because YAML
-# anchors do not cross the wildcard include in .gitlab-ci.yml.
+# Centralized conditions, change patterns, and composite rule sets — GitLab
+# style. Bare-mapping condition anchors (&if-*) and bare-list pattern anchors
+# (&*-patterns) are combined into composite `.*:rules` sets via YAML merge keys
+# (<<:) and aliases (*). Anchors are a same-file feature, so they only build the
+# composites here; jobs in the sibling .gitlab/ci/*.gitlab-ci.yml files consume
+# the composites via `!reference [".x:rules", rules]`, which does cross the
+# include. Never `!reference` the bare `.if-*` / `.*-patterns` anchors from
+# another file.
+#
+# Merging a condition into a rule (rather than referencing a whole rules list)
+# is what lets a composite add `changes:`, `when:`, or `variables:` to it.
 
-.if-merge-request:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+# --- Condition anchors (bare mappings; merged into a rule with `<<:`) ---------
 
-.if-default-branch:
-  rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
+.if-merge-request: &if-merge-request
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-.if-release:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $RELEASE == "true" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+.if-default-branch: &if-default-branch
+  if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
 
-.if-schedule:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+.if-release: &if-release
+  if: '$CI_PIPELINE_SOURCE == "web" && $RELEASE == "true" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
 
-.if-schedule-renovate:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TASK == "renovate"'
+.if-manual-run: &if-manual-run
+  if: '$CI_PIPELINE_SOURCE == "web" && $MANUAL_RUN == "true"'
 
-.if-schedule-deps-digest:
+.if-schedule-renovate: &if-schedule-renovate
+  if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TASK == "renovate"'
+
+.if-schedule-deps-digest: &if-schedule-deps-digest
+  if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TASK == "deps-digest"'
+
+# --- Change-pattern anchors (bare lists; aliased into a rule's `changes:`) ----
+
+.gitlab-ci-patterns: &gitlab-ci-patterns
+  - .gitlab-ci.yml
+  - .gitlab/ci/**/*
+
+.mise-patterns: &mise-patterns
+  - mise.toml
+  - mise.ci.toml
+
+.kotlin-patterns: &kotlin-patterns
+  - plugin-core/**/*
+  - tests/**/*
+  - project.yaml
+  - libs.versions.toml
+  - kotlin
+  - kotlin.bat
+
+# --- Composite rule sets (the public API — `!reference` these from jobs) ------
+
+# MR pipelines only build when something that can affect the build changed;
+# every other pipeline type always builds.
+.build:rules:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TASK == "deps-digest"'
+    - <<: *if-merge-request
+      changes: *kotlin-patterns
+    - <<: *if-merge-request
+      changes: *mise-patterns
+    - <<: *if-merge-request
+      changes: *gitlab-ci-patterns
+    - <<: *if-default-branch
+    - <<: *if-release
+    - <<: *if-manual-run
+
+# Same conditions as .build:rules: check needs build, so it must never run in a
+# pipeline that build is absent from.
+.check:rules:
+  rules:
+    - <<: *if-merge-request
+      changes: *kotlin-patterns
+    - <<: *if-merge-request
+      changes: *mise-patterns
+    - <<: *if-merge-request
+      changes: *gitlab-ci-patterns
+    - <<: *if-default-branch
+    - <<: *if-release
+    - <<: *if-manual-run
+
+.lint:rules:
+  rules:
+    - <<: *if-merge-request
+    - <<: *if-default-branch
+    - <<: *if-manual-run
+
+.release:rules:
+  rules:
+    - <<: *if-release
+
+.renovate:rules:
+  rules:
+    - <<: *if-schedule-renovate
+
+.deps-digest:rules:
+  rules:
+    - <<: *if-schedule-deps-digest

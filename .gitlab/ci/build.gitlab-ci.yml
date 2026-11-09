@@ -3,16 +3,17 @@
 build:
   stage: build
   needs: []
+  dependencies: []
   extends:
     - .default-retry
-    - .default-before_script
     - .interruptible
+    - .toolset:java
   cache:
     - !reference [".mise-cache", cache]
     - !reference [".kotlin-cache", cache]
   rules:
-    - !reference [".if-merge-request", rules]
-    - !reference [".if-default-branch", rules]
-    - !reference [".if-release", rules]
+    - !reference [".build:rules", rules]
+  before_script:
+    - !reference [".mise-before_script", before_script]
   script:
     - ./kotlin build

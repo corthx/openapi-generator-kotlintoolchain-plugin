@@ -13,16 +13,18 @@ release-prepare:
       artifacts: false
   extends:
     - .default-retry
-    - .default-before_script
     - .not-interruptible
+    - .toolset:release
   rules:
-    - !reference [".if-release", rules]
+    - !reference [".release:rules", rules]
   cache:
     - !reference [".mise-cache", cache]
   variables:
     # Full git history is required for git-cliff to compute the changelog
     # and the next version.
     GIT_DEPTH: "0"
+  before_script:
+    - !reference [".mise-before_script", before_script]
   script:
     - |
       set -euo pipefail
@@ -58,7 +60,7 @@ release-publish:
     - .default-retry
     - .not-interruptible
   rules:
-    - !reference [".if-release", rules]
+    - !reference [".release:rules", rules]
   script:
     - echo "Publishing GitLab release ${TAG}"
   release:
