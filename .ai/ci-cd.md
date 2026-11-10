@@ -132,7 +132,9 @@ Defines reusable building blocks:
 - **`.toolset:*`** -- per-job tool sets (`TOOLSET` / `TOOLSET_TOOLS`). Adding a tool to `mise.toml` does not make it
   available to a job: add it to every set that needs it. `.mise-cache` is keyed per `$TOOLSET`
 - **`.use-docker-in-docker`** -- Docker-in-Docker setup
-- **Cache definitions** -- `.mise-cache`, `.kotlin-toolchain-cache`, `.assets-cache`, etc.
+- **`.no-checkout`** -- skips the runner's checkout (`GIT_STRATEGY: none`), for jobs that never read the repository
+- **`.renovate-image`** -- the Renovate image, shared by `renovate` and `lint:renovate-config` so one bump covers both
+- **Cache definitions** -- `.mise-cache`, `.kotlin-toolchain-cache`, `.renovate-cache`, etc.
 
 ## Child Pipelines
 

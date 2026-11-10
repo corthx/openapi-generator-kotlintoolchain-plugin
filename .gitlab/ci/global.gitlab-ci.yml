@@ -23,6 +23,7 @@ variables:
   MISE_ENV: ci
   MISE_YES: "1"
   PRE_COMMIT_HOME: $CI_PROJECT_DIR/.pre-commit-data
+  RENOVATE_CACHE_DIR: $CI_PROJECT_DIR/.renovate-cache
   # Undocumented Kotlin Toolchain env var (equivalent to --shared-cache-dir).
   # yamllint disable-line rule:line-length
   # Source: https://github.com/JetBrains/kotlin-toolchain/blob/main/sources/core/src/org/jetbrains/amper/core/AmperUserCacheRoot.kt#L75C28-L75C51.
@@ -47,6 +48,18 @@ variables:
 
 .not-interruptible:
   interruptible: false
+
+# Skips the runner's checkout.
+.no-checkout:
+  variables:
+    GIT_STRATEGY: none
+
+# Renovate image, shared by the renovate-related jobs so one Renovate MR bumps
+# them all. entrypoint: [""] for the same reason as the default image above.
+.renovate-image:
+  image:
+    name: ghcr.io/renovatebot/renovate:44.199.1
+    entrypoint: [""]
 
 # Per-job tool sets. Adding a tool to mise.toml does not make it available to a
 # job — add it to the sets that need it.
@@ -99,6 +112,13 @@ variables:
         - .pre-commit-config.yaml
     paths:
       - $PRE_COMMIT_HOME/
+    policy: pull-push
+
+.renovate-cache:
+  cache:
+    key: renovate
+    paths:
+      - $RENOVATE_CACHE_DIR/
     policy: pull-push
 
 .kotlin-cache:

@@ -55,7 +55,7 @@ release-publish:
   needs:
     - job: release-prepare
       artifacts: true
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  image: registry.gitlab.com/gitlab-org/release-cli:v0.24.0
   extends:
     - .default-retry
     - .not-interruptible

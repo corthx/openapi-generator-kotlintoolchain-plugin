@@ -62,6 +62,13 @@
   - kotlin
   - kotlin.bat
 
+# The config, plus the files defining the validator job and its image, so a
+# Renovate image bump also validates the config with the new version.
+.renovate-config-patterns: &renovate-config-patterns
+  - renovate.json5
+  - .gitlab/ci/lint.gitlab-ci.yml
+  - .gitlab/ci/global.gitlab-ci.yml
+
 .tofu-tofu-bot-patterns: &tofu-tofu-bot-patterns
   - terraform/live/tofu-bot/**/*
 
@@ -123,6 +130,14 @@
   rules:
     - <<: *if-merge-request
     - <<: *if-default-branch
+    - <<: *if-manual-run
+
+.lint:renovate-config:rules:
+  rules:
+    - <<: *if-merge-request
+      changes: *renovate-config-patterns
+    - <<: *if-default-branch
+      changes: *renovate-config-patterns
     - <<: *if-manual-run
 
 .release:rules:

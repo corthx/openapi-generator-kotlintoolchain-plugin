@@ -1,32 +1,35 @@
 ---
-
-# Self-hosted Renovate runner. Executes only on the SCHEDULE_TASK=renovate
-# schedule (terraform/live/pipeline-schedule-renovate), authenticated as the
-# renovate bot (terraform/live/renovate-bot).
-# All other jobs in this pipeline are gated on merge_request_event,
-# default-branch push, or web release, so a scheduled pipeline runs
-# only this job.
+# Self-hosted Renovate: GitLab has no hosted Renovate app, so the renovate job
+# runs from this project's own pipeline, triggered by the SCHEDULE_TASK=renovate
+# schedule (terraform/live/pipeline-schedule-renovate) and authenticated as the
+# renovate bot (terraform/live/renovate-bot). The update policy itself lives in
+# renovate.json5. The job doesn't use mise: the Renovate image ships everything.
 
 renovate:
   stage: maintenance
+  extends:
+    - .renovate-image
+    - .default-retry
+    - .not-interruptible
+    - .no-checkout
   needs: []
   dependencies: []
-  image:
-    name: renovate/renovate:43.288.0
-    entrypoint: [""]
-  extends:
-    - .not-interruptible
   rules:
     - !reference [".renovate:rules", rules]
+  cache:
+    - !reference [".renovate-cache", cache]
   variables:
     LOG_LEVEL: info
     RENOVATE_PLATFORM: gitlab
-    RENOVATE_ENDPOINT: "${CI_API_V4_URL}"
-    RENOVATE_AUTODISCOVER: false # Disable Renovate "scan every repo I can see" mode
-    RENOVATE_REPOSITORIES: "${CI_PROJECT_PATH}"
-    # RENOVATE_TOKEN and RENOVATE_GIT_AUTHOR_EMAIL are CI/CD variables set by
-    # the renovate bot's unit. Commits must use the bot's GitLab-assigned email,
-    # or GitLab doesn't attribute them to it.
+    RENOVATE_ENDPOINT: $CI_API_V4_URL
+    RENOVATE_REPOSITORIES: $CI_PROJECT_PATH
+    # RENOVATE_TOKEN is the renovate bot's token, set as a CI/CD variable by
+    # its unit. RENOVATE_GITHUB_COM_TOKEN (set by hand) lifts github.com's
+    # anonymous rate limit, which the changelog and release lookups would hit.
+    # Commits must use the bot's GitLab-assigned email, or GitLab doesn't
+    # attribute them to it.
     RENOVATE_GIT_AUTHOR: "Renovate Bot <$RENOVATE_GIT_AUTHOR_EMAIL>"
+    RENOVATE_ONBOARDING: "false"
+    RENOVATE_REQUIRE_CONFIG: required
   script:
     - renovate
