@@ -1,13 +1,13 @@
 [tools]
 java = "corretto-21"
-node = "24.21.0"
+node = "24.22.2"
 python = "3.15.2"
-pre-commit = "4.6.2"
-markdownlint-cli2 = { version = "0.23.3", depends = ["node"] }
+pre-commit = "4.7.0"
+markdownlint-cli2 = { version = "0.24.0", depends = ["node"] }
 actionlint = "1.7.12"
 ktlint = "1.8.0"
 git-cliff = "2.14.2"
-pipx = { version = "1.17.7", depends = ["python"] }
+pipx = { version = "1.18.16", depends = ["python"] }
 "pipx:yamllint" = { version = "1.38.0", depends = ["pipx"] }
 
 [settings]
