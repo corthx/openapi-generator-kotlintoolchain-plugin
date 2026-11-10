@@ -1,0 +1,303 @@
+---
+# plan / apply via the GitLab OpenTofu CI/CD component. The component supplies
+# its own gitlab-tofu image (overriding the default mise image) and the
+# GitLab-managed state backend (auto_define_backend → CI_JOB_TOKEN), so these
+# jobs don't use mise. fmt/validate are handled by the mise-driven lint job.
+include:
+  - component: $CI_SERVER_FQDN/components/opentofu/job-templates@4.9.0
+    inputs:
+      # Keep in sync with the include tag above (Renovate bumps both together).
+      # renovate: datasource=gitlab-tags depName=components/opentofu registryUrl=https://gitlab.com
+      version: "4.9.0"
+      use_rootless_image: true
+      # Keep in sync with mise.toml's opentofu pin, so CI plans with the same
+      # OpenTofu version the lint job validates with (Renovate bumps both together).
+      # renovate: datasource=github-releases depName=opentofu packageName=opentofu/opentofu
+      opentofu_version: "1.12.6"
+      auto_define_backend: true
+      auto_delete_state: true
+      auto_encryption: true
+      auto_encryption_passphrase: $TOFU_ENCRYPTION_PASSPHRASE
+      post_mr_plan_comment: true
+      lockfile: "readonly"
+
+.gitlab-provider-auth-via-manual-token:
+  variables:
+    GITLAB_TOKEN: $GITLAB_TOFU_PROVIDER_MANUAL_TOKEN
+
+.gitlab-provider-auth-via-provider-bot:
+  variables:
+    GITLAB_TOKEN: $GITLAB_TOFU_PROVIDER_TOKEN
+
+.gitlab-provider-auth-via-rotator-bot:
+  variables:
+    GITLAB_TOKEN: $GITLAB_TOFU_PROVIDER_ROTATOR_TOKEN
+
+# rules: is intentionally NOT set here — every unit below extends .plan/.apply.
+.plan:
+  extends: [.opentofu:plan]
+  stage: plan
+  needs: []
+
+.apply:
+  extends: [.opentofu:apply]
+  stage: apply
+  allow_failure: false # blocking manual: default-branch pipeline gates on apply
+
+.destroy:
+  extends: [.opentofu:destroy]
+  stage: cleanup
+  needs: []
+  rules:
+    - !reference [".tofu:rules:destroy", rules]
+
+.unit:tofu-bot:
+  extends: [.gitlab-provider-auth-via-provider-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/tofu-bot
+    GITLAB_TOFU_STATE_NAME: tofu-bot
+
+.unit:pipeline-schedule:token-rotation:
+  extends: [.gitlab-provider-auth-via-provider-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/pipeline-schedule-token-rotation
+    GITLAB_TOFU_STATE_NAME: pipeline-schedule-token-rotation
+
+.unit:labels:
+  extends: [.gitlab-provider-auth-via-provider-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/labels
+    GITLAB_TOFU_STATE_NAME: labels
+
+.unit:issue-boards:
+  extends: [.gitlab-provider-auth-via-provider-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/issue-boards
+    GITLAB_TOFU_STATE_NAME: issue-boards
+
+.unit:terraform-provider-bot:
+  extends: [.gitlab-provider-auth-via-rotator-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/terraform-provider-bot
+    GITLAB_TOFU_STATE_NAME: terraform-provider-bot
+
+.unit:terraform-provider-rotator-bot:
+  extends: [.gitlab-provider-auth-via-provider-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/terraform-provider-rotator-bot
+    GITLAB_TOFU_STATE_NAME: terraform-provider-rotator-bot
+
+.unit:renovate-bot:
+  extends: [.gitlab-provider-auth-via-provider-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/renovate-bot
+    GITLAB_TOFU_STATE_NAME: renovate-bot
+
+.unit:pipeline-schedule:renovate:
+  extends: [.gitlab-provider-auth-via-provider-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/pipeline-schedule-renovate
+    GITLAB_TOFU_STATE_NAME: pipeline-schedule-renovate
+
+.unit:pipeline-schedule:deps-digest:
+  extends: [.gitlab-provider-auth-via-provider-bot]
+  variables:
+    GITLAB_TOFU_ROOT_DIR: terraform/live/pipeline-schedule-deps-digest
+    GITLAB_TOFU_STATE_NAME: pipeline-schedule-deps-digest
+
+# --- tofu bot ---
+plan:tofu-bot:
+  extends: [.plan, .unit:tofu-bot]
+  rules:
+    - !reference [".tofu:rules:plan:tofu-bot", rules]
+
+apply:tofu-bot:
+  extends: [.apply, .unit:tofu-bot]
+  needs:
+    - plan:tofu-bot
+    # Waits for provider-bot's rotation, if any, so this job's token stays valid.
+    - job: apply:terraform-provider-bot
+      optional: true
+  rules:
+    - !reference [".tofu:rules:apply:tofu-bot", rules]
+
+destroy:tofu-bot:
+  extends: [.destroy, .unit:tofu-bot]
+  needs:
+    # The token-rotation schedule can trigger an unattended apply on this unit.
+    # Destroy the schedule first so a rotation can't race with this destroy.
+    - destroy:pipeline-schedule:token-rotation
+
+# --- token-rotation pipeline schedule ---
+plan:pipeline-schedule:token-rotation:
+  extends: [.plan, .unit:pipeline-schedule:token-rotation]
+  rules:
+    - !reference [".tofu:rules:plan:pipeline-schedule:token-rotation", rules]
+
+apply:pipeline-schedule:token-rotation:
+  extends: [.apply, .unit:pipeline-schedule:token-rotation]
+  needs:
+    - plan:pipeline-schedule:token-rotation
+    # Waits for provider-bot's rotation, if any, so this job's token stays valid.
+    - job: apply:terraform-provider-bot
+      optional: true
+  rules:
+    - !reference [".tofu:rules:apply:pipeline-schedule:token-rotation", rules]
+
+destroy:pipeline-schedule:token-rotation:
+  extends: [.destroy, .unit:pipeline-schedule:token-rotation]
+
+# --- project labels ---
+plan:labels:
+  extends: [.plan, .unit:labels]
+  rules:
+    - !reference [".tofu:rules:plan:labels", rules]
+
+apply:labels:
+  extends: [.apply, .unit:labels]
+  needs:
+    - plan:labels
+    # Waits for provider-bot's rotation, if any, so this job's token stays valid.
+    - job: apply:terraform-provider-bot
+      optional: true
+  rules:
+    - !reference [".tofu:rules:apply:labels", rules]
+
+destroy:labels:
+  extends: [.destroy, .unit:labels]
+  needs:
+    - destroy:issue-boards
+
+# --- project issue boards ---
+plan:issue-boards:
+  extends: [.plan, .unit:issue-boards]
+  needs:
+    # Optional: a pipeline that touches only this unit never creates the labels
+    # jobs, and a `needs` on a job absent from the pipeline is a config error.
+    - job: plan:labels
+      optional: true
+  rules:
+    - !reference [".tofu:rules:plan:issue-boards", rules]
+
+apply:issue-boards:
+  extends: [.apply, .unit:issue-boards]
+  needs:
+    # Board lists reference labels by name, so labels apply first when both are
+    # in the pipeline; optional for the same reason as plan:issue-boards above.
+    - job: apply:labels
+      optional: true
+    - plan:issue-boards
+    # Waits for provider-bot's rotation, if any, so this job's token stays valid.
+    - job: apply:terraform-provider-bot
+      optional: true
+  rules:
+    - !reference [".tofu:rules:apply:issue-boards", rules]
+
+destroy:issue-boards:
+  extends: [.destroy, .unit:issue-boards]
+
+# --- terraform provider bot ---
+plan:terraform-provider-bot:
+  extends: [.plan, .unit:terraform-provider-bot]
+  rules:
+    - !reference [".tofu:rules:plan:terraform-provider-bot", rules]
+
+apply:terraform-provider-bot:
+  extends: [.apply, .unit:terraform-provider-bot]
+  # Head of the apply chain: the rotator waits on this job instead of the
+  # reverse, so its manual button doesn't gate every other unit's apply.
+  needs:
+    - plan:terraform-provider-bot
+  rules:
+    - !reference [".tofu:rules:apply:terraform-provider-bot", rules]
+
+destroy:terraform-provider-bot:
+  extends: [.destroy, .unit:terraform-provider-bot]
+  needs:
+    # The token-rotation schedule can trigger an unattended apply on this unit.
+    # Destroy the schedule first so a rotation can't race with this destroy.
+    - destroy:pipeline-schedule:token-rotation
+
+# --- terraform-provider-bot's rotation counterpart ---
+plan:terraform-provider-rotator-bot:
+  extends: [.plan, .unit:terraform-provider-rotator-bot]
+  rules:
+    - !reference [".tofu:rules:plan:terraform-provider-rotator-bot", rules]
+
+apply:terraform-provider-rotator-bot:
+  extends: [.apply, .unit:terraform-provider-rotator-bot]
+  needs:
+    - plan:terraform-provider-rotator-bot
+    # Waits for provider-bot's rotation, if any, so this job's token stays valid.
+    - job: apply:terraform-provider-bot
+      optional: true
+  rules:
+    - !reference [".tofu:rules:apply:terraform-provider-rotator-bot", rules]
+
+destroy:terraform-provider-rotator-bot:
+  extends: [.destroy, .unit:terraform-provider-rotator-bot]
+  needs:
+    - destroy:pipeline-schedule:token-rotation
+
+# --- renovate bot ---
+plan:renovate-bot:
+  extends: [.plan, .unit:renovate-bot]
+  rules:
+    - !reference [".tofu:rules:plan:renovate-bot", rules]
+
+apply:renovate-bot:
+  extends: [.apply, .unit:renovate-bot]
+  needs:
+    - plan:renovate-bot
+    # Waits for provider-bot's rotation, if any, so this job's token stays valid.
+    - job: apply:terraform-provider-bot
+      optional: true
+  rules:
+    - !reference [".tofu:rules:apply:renovate-bot", rules]
+
+destroy:renovate-bot:
+  extends: [.destroy, .unit:renovate-bot]
+  needs:
+    # Both schedules use this bot: token-rotation re-applies it, and renovate
+    # runs with its token. Destroy them first so neither runs against a
+    # half-destroyed bot.
+    - destroy:pipeline-schedule:token-rotation
+    - destroy:pipeline-schedule:renovate
+
+# --- renovate pipeline schedule ---
+plan:pipeline-schedule:renovate:
+  extends: [.plan, .unit:pipeline-schedule:renovate]
+  rules:
+    - !reference [".tofu:rules:plan:pipeline-schedule:renovate", rules]
+
+apply:pipeline-schedule:renovate:
+  extends: [.apply, .unit:pipeline-schedule:renovate]
+  needs:
+    - plan:pipeline-schedule:renovate
+    # Waits for provider-bot's rotation, if any, so this job's token stays valid.
+    - job: apply:terraform-provider-bot
+      optional: true
+  rules:
+    - !reference [".tofu:rules:apply:pipeline-schedule:renovate", rules]
+
+destroy:pipeline-schedule:renovate:
+  extends: [.destroy, .unit:pipeline-schedule:renovate]
+
+# --- deps-digest pipeline schedule ---
+plan:pipeline-schedule:deps-digest:
+  extends: [.plan, .unit:pipeline-schedule:deps-digest]
+  rules:
+    - !reference [".tofu:rules:plan:pipeline-schedule:deps-digest", rules]
+
+apply:pipeline-schedule:deps-digest:
+  extends: [.apply, .unit:pipeline-schedule:deps-digest]
+  needs:
+    - plan:pipeline-schedule:deps-digest
+    # Waits for provider-bot's rotation, if any, so this job's token stays valid.
+    - job: apply:terraform-provider-bot
+      optional: true
+  rules:
+    - !reference [".tofu:rules:apply:pipeline-schedule:deps-digest", rules]
+
+destroy:pipeline-schedule:deps-digest:
+  extends: [.destroy, .unit:pipeline-schedule:deps-digest]

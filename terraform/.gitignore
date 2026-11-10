@@ -1,0 +1,6 @@
+# .terraform.lock.hcl is deliberately tracked.
+**/.terraform/
+*.tfplan
+tfplan
+*.tfstate
+*.tfstate.*

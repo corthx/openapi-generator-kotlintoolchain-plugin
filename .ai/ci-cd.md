@@ -15,6 +15,7 @@ The CI/CD configuration spans different YAML files across `.gitlab-ci.yml` and `
   global.gitlab-ci.yml            # Shared foundations: retry, before_script, caches
   rules.gitlab-ci.yml             # Centralized rules (~3,500 lines): conditions, file patterns, composite rules
   releases.gitlab-ci.yml          # Release tagging
+  tofu.gitlab-ci.yml              # OpenTofu plan / apply / destroy, one set of jobs per terraform/live unit
 ```
 
 ## Include Mechanism
@@ -88,6 +89,20 @@ rspec unit pg17:
     - .rspec-unit-parallel
 ```
 
+### OpenTofu rules
+
+Each `terraform/live/<unit>/` has a `&tofu-<unit>-patterns` anchor and two composites, `.tofu:rules:plan:<unit>` and
+`.tofu:rules:apply:<unit>`, plus a shared `.tofu:rules:destroy`. They are built from these condition anchors:
+
+- `&if-merge-request-label-tofu-plan` / `&if-merge-request-label-tofu-apply` — MR pipelines with that label: plan every
+  unit, and with `tofu:apply` also expose a manual apply
+- `&if-destroy-infra` — `destroy_infra` input set to `true` on the default branch (`DESTROY_INFRA=true`)
+- `&if-schedule-token-rotation` — schedules with `SCHEDULE_TASK=token-rotation`, which re-apply the bot units
+
+A plan runs when an MR or a default-branch push changes the unit's files, on the labels above, on manual runs, and in
+destroy pipelines. An apply is always manual, except in the token-rotation schedule. See
+[docs/infrastructure.md](../docs/infrastructure.md) for the units and their bootstrap.
+
 ## Job Dependencies (DAG)
 
 Stages in this project exist purely for **visual grouping** in the GitLab pipeline UI — they have no effect on
@@ -137,6 +152,8 @@ Key pipeline types:
 - **Default branch pipelines** -- pushes/merges to master
 - **Scheduled pipelines** -- nightly, weekly, maintenance
 - **Manual pipelines** -- e.g. for releases
+- **Destroy pipelines** -- manual web trigger with the `destroy_infra` input set to `true`, named `Destroy pipeline`.
+  Sets `DESTROY_INFRA=true`, which exposes the `destroy:<unit>` jobs
 
 ## Common Tasks
 

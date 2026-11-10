@@ -1,0 +1,92 @@
+["tofu:format"]
+alias = "tofu:fmt"
+description = "Format all OpenTofu files in place"
+dir = "{{ vars.tofu_dir }}"
+run = "tofu fmt -recursive ."
+
+["tofu:lint"]
+description = "Lint terraform files"
+dir = "{{ vars.tofu_dir }}"
+run = [
+  { task = "tofu:lint:tflint" },
+  { task = "tofu:lint:validate:all" },
+]
+
+["tofu:lint:tflint"]
+description = "Lint terraform files"
+dir = "{{ vars.tofu_dir }}"
+run = '''
+tflint --init
+tflint --recursive
+'''
+
+["tofu:units:each"]
+description = "Run a shell script inside every terraform unit"
+hide = true
+quiet = true
+dir = "{{ vars.tofu_dir }}"
+usage = 'arg "<script>" help="Shell script to run from inside each unit directory"'
+run = '''
+rc=0
+# Depth-agnostic: units may sit directly under live/ or grouped in a
+# subfolder.
+# Command substitution so rc set inside the loop isn't lost to a subshell.
+for unit in $(find live -type f -name main.tf ! -path '*/.terraform/*' -exec dirname {} \; | sort); do
+  echo "== ${unit#live/} =="
+  (cd "$unit" && sh -c "$usage_script") || rc=1
+done
+exit $rc
+'''
+
+["tofu:lint:validate:all"]
+description = "Validate all terraform units"
+dir = "{{ vars.tofu_dir }}"
+run = '''
+mise run tofu:units:each '
+# validate resolves providers through the lock file, not .terraform/.
+if [ ! -d .terraform ] || [ ! -f .terraform.lock.hcl ]; then
+  tofu init -input=false -backend=false -lockfile=readonly >/dev/null || {
+    echo "hint: run \"mise run tofu:lock:all\" to create or update the lock file" >&2
+    exit 1
+  }
+fi
+tofu validate
+'
+'''
+
+["tofu:lock:all"]
+description = "Sync the provider lock file of all terraform units with their constraints"
+dir = "{{ vars.tofu_dir }}"
+usage = 'flag "--upgrade" help="Bump providers to the newest versions allowed by the constraints"'
+run = '''
+mise run tofu:units:each '
+set -e
+tofu init -input=false -backend=false {% if usage.upgrade %}-upgrade{% endif %} >/dev/null
+# Record hashes for every platform that runs tofu (local Macs + Linux CI),
+# otherwise init on another platform would need to rewrite the lock file.
+tofu providers lock \
+  -platform=linux_amd64 \
+  -platform=darwin_arm64 \
+  -platform=darwin_amd64 >/dev/null
+'
+'''
+
+["tofu:lock:upgrade"]
+description = "Bump the providers of all terraform units to the newest versions allowed by their constraints"
+run = "mise run tofu:lock:all --upgrade"
+
+["tofu:lint:fix"]
+description = "Autofix terraform lint errors when possible"
+dir = "{{ vars.tofu_dir }}"
+run = '''
+tflint --init
+tflint --recursive --fix
+'''
+
+["tofu:clean"]
+description = "Clean local OpenTofu working files"
+dir = "{{ vars.tofu_dir }}"
+run = '''
+find . -type d -name .terraform -prune -exec rm -rf {} +
+find . -type f \( -name tfplan -o -name '*.tfplan' \) -delete
+'''

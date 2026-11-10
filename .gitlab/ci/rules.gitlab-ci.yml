@@ -17,6 +17,12 @@
 .if-merge-request: &if-merge-request
   if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
+.if-merge-request-label-tofu-plan: &if-merge-request-label-tofu-plan
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(^|,)tofu:plan(,|$)/'
+
+.if-merge-request-label-tofu-apply: &if-merge-request-label-tofu-apply
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(^|,)tofu:apply(,|$)/'
+
 .if-default-branch: &if-default-branch
   if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
 
@@ -26,11 +32,17 @@
 .if-manual-run: &if-manual-run
   if: '$CI_PIPELINE_SOURCE == "web" && $MANUAL_RUN == "true"'
 
+.if-destroy-infra: &if-destroy-infra
+  if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH && $DESTROY_INFRA == "true"'
+
 .if-schedule-renovate: &if-schedule-renovate
   if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TASK == "renovate"'
 
 .if-schedule-deps-digest: &if-schedule-deps-digest
   if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TASK == "deps-digest"'
+
+.if-schedule-token-rotation: &if-schedule-token-rotation
+  if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TASK == "token-rotation"'
 
 # --- Change-pattern anchors (bare lists; aliased into a rule's `changes:`) ----
 
@@ -49,6 +61,33 @@
   - libs.versions.toml
   - kotlin
   - kotlin.bat
+
+.tofu-tofu-bot-patterns: &tofu-tofu-bot-patterns
+  - terraform/live/tofu-bot/**/*
+
+.tofu-labels-patterns: &tofu-labels-patterns
+  - terraform/live/labels/**/*
+
+.tofu-issue-boards-patterns: &tofu-issue-boards-patterns
+  - terraform/live/issue-boards/**/*
+
+.tofu-pipeline-schedule-token-rotation-patterns: &tofu-pipeline-schedule-token-rotation-patterns
+  - terraform/live/pipeline-schedule-token-rotation/**/*
+
+.tofu-terraform-provider-bot-patterns: &tofu-terraform-provider-bot-patterns
+  - terraform/live/terraform-provider-bot/**/*
+
+.tofu-terraform-provider-rotator-bot-patterns: &tofu-terraform-provider-rotator-bot-patterns
+  - terraform/live/terraform-provider-rotator-bot/**/*
+
+.tofu-renovate-bot-patterns: &tofu-renovate-bot-patterns
+  - terraform/live/renovate-bot/**/*
+
+.tofu-pipeline-schedule-renovate-patterns: &tofu-pipeline-schedule-renovate-patterns
+  - terraform/live/pipeline-schedule-renovate/**/*
+
+.tofu-pipeline-schedule-deps-digest-patterns: &tofu-pipeline-schedule-deps-digest-patterns
+  - terraform/live/pipeline-schedule-deps-digest/**/*
 
 # --- Composite rule sets (the public API — `!reference` these from jobs) ------
 
@@ -97,3 +136,205 @@
 .deps-digest:rules:
   rules:
     - <<: *if-schedule-deps-digest
+
+.tofu:rules:plan:tofu-bot:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-tofu-bot-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-tofu-bot-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+    - <<: *if-schedule-token-rotation
+
+.tofu:rules:apply:tofu-bot:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-tofu-bot-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+    - <<: *if-schedule-token-rotation
+
+.tofu:rules:plan:labels:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-labels-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-labels-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+
+.tofu:rules:apply:labels:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-labels-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+
+.tofu:rules:plan:issue-boards:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-issue-boards-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-issue-boards-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+
+.tofu:rules:apply:issue-boards:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-issue-boards-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+
+.tofu:rules:plan:pipeline-schedule:token-rotation:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-pipeline-schedule-token-rotation-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-pipeline-schedule-token-rotation-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+
+.tofu:rules:apply:pipeline-schedule:token-rotation:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-pipeline-schedule-token-rotation-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+
+.tofu:rules:plan:pipeline-schedule:renovate:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-pipeline-schedule-renovate-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-pipeline-schedule-renovate-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+
+.tofu:rules:apply:pipeline-schedule:renovate:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-pipeline-schedule-renovate-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+
+.tofu:rules:plan:pipeline-schedule:deps-digest:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-pipeline-schedule-deps-digest-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-pipeline-schedule-deps-digest-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+
+.tofu:rules:apply:pipeline-schedule:deps-digest:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-pipeline-schedule-deps-digest-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+
+.tofu:rules:plan:terraform-provider-bot:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-terraform-provider-bot-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-terraform-provider-bot-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+    - <<: *if-schedule-token-rotation
+
+.tofu:rules:apply:terraform-provider-bot:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-terraform-provider-bot-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+    - <<: *if-schedule-token-rotation
+
+.tofu:rules:plan:terraform-provider-rotator-bot:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-terraform-provider-rotator-bot-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-terraform-provider-rotator-bot-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+    - <<: *if-schedule-token-rotation
+
+.tofu:rules:apply:terraform-provider-rotator-bot:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-terraform-provider-rotator-bot-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+    - <<: *if-schedule-token-rotation
+
+.tofu:rules:plan:renovate-bot:
+  rules:
+    - <<: *if-merge-request
+      changes: *tofu-renovate-bot-patterns
+    - <<: *if-merge-request-label-tofu-plan
+    - <<: *if-merge-request-label-tofu-apply
+    - <<: *if-default-branch
+      changes: *tofu-renovate-bot-patterns
+    - <<: *if-manual-run
+    - <<: *if-destroy-infra
+    - <<: *if-schedule-token-rotation
+
+.tofu:rules:apply:renovate-bot:
+  rules:
+    - <<: *if-merge-request-label-tofu-apply
+      when: manual
+    - <<: *if-default-branch
+      changes: *tofu-renovate-bot-patterns
+      when: manual
+    - <<: *if-manual-run
+      when: manual
+    - <<: *if-schedule-token-rotation
+
+.tofu:rules:destroy:
+  rules:
+    - <<: *if-destroy-infra
+      when: manual

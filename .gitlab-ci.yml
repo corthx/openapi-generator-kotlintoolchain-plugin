@@ -1,7 +1,8 @@
 ---
 
 # Pipeline-level interface parameters exposed in the "Run pipeline" UI.
-# Only used by the release pipeline; harmless for MR / default-branch runs.
+# Only used by the release and destroy pipelines; harmless for MR /
+# default-branch runs.
 spec:
   inputs:
     release:
@@ -14,6 +15,12 @@ spec:
       description: >-
         Optional explicit version (e.g. 1.2.3). Leave empty to auto-bump
         from conventional commits via git-cliff (recommended).
+    destroy_infra:
+      type: boolean
+      default: false
+      description: >-
+        Set to true to expose the OpenTofu destroy jobs
+        (default branch only).
 ---
 
 stages:
@@ -22,6 +29,9 @@ stages:
   - build
   - check
   - release
+  - plan
+  - apply
+  - cleanup
 
 workflow:
   # Applies the PIPELINE_NAME the rules below set; without it the variable is
@@ -44,6 +54,10 @@ workflow:
         # (which are file-scoped and cannot read inputs) can consume them.
         RELEASE: "true"
         VERSION: "$[[ inputs.version ]]"
+    - if: '$CI_PIPELINE_SOURCE == "web" && $[[ inputs.destroy_infra ]] && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      variables:
+        PIPELINE_NAME: 'Destroy pipeline'
+        DESTROY_INFRA: "true"
     # Must stay last: the rules above set the variables the job rules read.
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       variables:

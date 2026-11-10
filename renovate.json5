@@ -44,13 +44,39 @@
         "(^|/)\\.gitlab-ci\\.ya?ml$",
       ],
       matchStrings: [
-        "component:\\s+(?<registryUrl>[^/]+)/(?<depName>[^@\\s]+)@(?<currentValue>[^\\s]+)",
+        // `$` excluded from the host class: variable hosts are skipped, not
+        // captured into the unresolvable `https://$CI_SERVER_FQDN`.
+        "component:\\s+(?<registryUrl>[^/\\s$]+)/(?<depName>[^@\\s]+)@(?<currentValue>[^\\s]+)",
       ],
       datasourceTemplate: "gitlab-tags",
       registryUrlTemplate: "https://{{registryUrl}}",
       versioningTemplate: "semver",
     },
+    // Values pinned next to a `# renovate:` comment, for versions written
+    // twice (the OpenTofu component's inputs mirror its include ref and the
+    // mise.toml opentofu pin).
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^\\.gitlab/ci/.+\\.gitlab-ci\\.yml$/"],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: packageName=(?<packageName>\\S+))?(?: registryUrl=(?<registryUrl>\\S+))?\\s+\\S+:\\s*\"?(?<currentValue>[^\"\\s]+)\"?",
+      ],
+      extractVersionTemplate: "^v?(?<version>.+)$",
+    },
   ],
+
+  // Lets the gitlabci-include manager resolve the OpenTofu component's
+  // `$CI_SERVER_FQDN/...` include ref.
+  gitlabci: {
+    registryAliases: {
+      $CI_SERVER_FQDN: "gitlab.com",
+    },
+  },
+
+  // Refreshes the units' .terraform.lock.hcl files.
+  lockFileMaintenance: {
+    enabled: true,
+  },
 
   packageRules: [
     {
@@ -82,6 +108,26 @@
     {
       matchManagers: ["gitlabci", "gitlabci-include"],
       groupName: "CI Images",
+    },
+    // Modules provision the tokens CI authenticates with; a bad bump locks
+    // the pipeline out of the project.
+    {
+      matchManagers: ["terraform"],
+      matchDepTypes: ["module"],
+      automerge: false,
+    },
+    // OpenTofu (mise.toml, mirrored in the component's opentofu_version input)
+    // and the OpenTofu CI component (include ref, mirrored in its version
+    // input) move together, since a component release is what ships images for
+    // new OpenTofu versions. Changing tofu.gitlab-ci.yml alone plans no unit,
+    // so the tofu:plan label makes the MR plan them all. Must stay after the
+    // mise rules: packageRules merge in order.
+    {
+      matchDepNames: ["opentofu", "components/opentofu"],
+      groupName: "opentofu",
+      commitMessageTopic: "opentofu",
+      addLabels: ["tofu:plan"],
+      automerge: false,
     },
     // Majors always manual, regardless of manager.
     {

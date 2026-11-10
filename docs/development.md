@@ -23,3 +23,8 @@ JDK auto-provisioning and will download the correct JDK automatically on first r
 ## Maintenance jobs
 
 - [Weekly dependency digest](deps-digest.md) — posts merged Renovate MRs to Discord every Monday.
+
+## Infrastructure
+
+The project's GitLab configuration is managed with OpenTofu under `terraform/`. See
+[infrastructure.md](infrastructure.md).

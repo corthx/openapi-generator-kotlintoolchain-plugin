@@ -7,8 +7,10 @@ markdownlint-cli2 = { version = "0.24.0", depends = ["node"] }
 actionlint = "1.7.12"
 ktlint = "1.8.0"
 git-cliff = "2.14.2"
+opentofu = "1.12.6"
 pipx = { version = "1.18.16", depends = ["python"] }
 "pipx:yamllint" = { version = "1.38.0", depends = ["pipx"] }
+tflint = "0.65.0"
 
 [settings]
 experimental = true
@@ -16,4 +18,8 @@ experimental = true
 [task_config]
 includes = [
     ".mise/pre-commit.toml",
+    ".mise/tofu.toml",
 ]
+
+[vars]
+tofu_dir = "{{ config_root }}/terraform/"

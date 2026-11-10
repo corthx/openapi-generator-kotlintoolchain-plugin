@@ -1,7 +1,8 @@
 ---
 
-# Self-hosted Renovate runner. Executes only on the scheduled-pipeline
-# trigger configured in the GitLab UI (Build → Pipeline schedules).
+# Self-hosted Renovate runner. Executes only on the SCHEDULE_TASK=renovate
+# schedule (terraform/live/pipeline-schedule-renovate), authenticated as the
+# renovate bot (terraform/live/renovate-bot).
 # All other jobs in this pipeline are gated on merge_request_event,
 # default-branch push, or web release, so a scheduled pipeline runs
 # only this job.
@@ -23,6 +24,9 @@ renovate:
     RENOVATE_ENDPOINT: "${CI_API_V4_URL}"
     RENOVATE_AUTODISCOVER: false # Disable Renovate "scan every repo I can see" mode
     RENOVATE_REPOSITORIES: "${CI_PROJECT_PATH}"
-    RENOVATE_GIT_AUTHOR: "Renovate Bot <renovate-bot@${CI_SERVER_HOST}>"
+    # RENOVATE_TOKEN and RENOVATE_GIT_AUTHOR_EMAIL are CI/CD variables set by
+    # the renovate bot's unit. Commits must use the bot's GitLab-assigned email,
+    # or GitLab doesn't attribute them to it.
+    RENOVATE_GIT_AUTHOR: "Renovate Bot <$RENOVATE_GIT_AUTHOR_EMAIL>"
   script:
     - renovate

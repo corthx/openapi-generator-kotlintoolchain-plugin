@@ -3,6 +3,31 @@
 repos:
   - repo: local
     hooks:
+      - id: format-terraform
+        name: Format terraform files
+        entry: mise tofu:format
+        language: system
+        types: [terraform]
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: lintfix-terraform
+        name: Autofix terraform lint errors
+        entry: mise tofu:lint:fix
+        language: system
+        types: [terraform]
+        pass_filenames: false
+        stages: [pre-commit]
+
+      # hcl too, so a lock-file-only change still gets validated
+      - id: lint-terraform
+        name: Lint terraform files
+        entry: mise tofu:lint
+        language: system
+        types_or: [terraform, hcl]
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: ktlint
         name: Lint Kotlin
         entry: ktlint

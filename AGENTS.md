@@ -33,6 +33,12 @@ The codebase follows a simple architecture:
 
 - `tests/*` - A bunch of tests projects that help ensuring the plugin works correctly in various setups
 
+**Infrastructure:**
+
+- `terraform/live/<unit>/` - OpenTofu root modules managing this project's GitLab configuration (labels, boards, bots,
+  pipeline schedules), planned and applied by `.gitlab/ci/tofu.gitlab-ci.yml`. See
+  [docs/infrastructure.md](docs/infrastructure.md).
+
 **Configuration System:**
 
 - `mise.toml` / `mise.dev.toml` / `.miserc.toml` - See [.ai/mise.md](.ai/mise.md) for the full mise configuration
@@ -62,7 +68,7 @@ by mise.
 
 Here are common commands:
 
-| Task | Command |
-|------|---------|
+| Task  | Command          |
+|-------|------------------|
 | Build | `./kotlin build` |
-| Test | `./kotlin test` |
+| Test  | `./kotlin test`  |

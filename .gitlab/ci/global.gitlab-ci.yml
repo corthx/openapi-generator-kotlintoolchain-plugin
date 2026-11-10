@@ -59,7 +59,7 @@ variables:
   variables:
     TOOLSET: lint
     # java: ktlint is a JAR launched through the JVM.
-    TOOLSET_TOOLS: "java node python pre-commit ktlint actionlint markdownlint-cli2 pipx pipx:yamllint"
+    TOOLSET_TOOLS: "java node python pre-commit ktlint actionlint markdownlint-cli2 pipx pipx:yamllint opentofu tflint"
 
 .toolset:release:
   variables:
