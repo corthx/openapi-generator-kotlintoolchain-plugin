@@ -122,12 +122,16 @@
     // and the OpenTofu CI component (include ref, mirrored in its version
     // input) move together, since a component release is what ships images for
     // new OpenTofu versions. Changing tofu.gitlab-ci.yml alone plans no unit,
-    // so the tofu:plan label makes the MR plan them all. Must stay after the
-    // mise rules: packageRules merge in order.
+    // so the tofu:plan label makes the MR plan them all. Each component release
+    // only accepts a fixed list of opentofu_version values, so
+    // separateMajorMinor: false keeps a component major in the same MR as an
+    // OpenTofu minor: split, each MR fails pipeline creation. Must stay after
+    // the mise rules: packageRules merge in order.
     {
       matchDepNames: ["opentofu", "components/opentofu"],
       groupName: "opentofu",
       commitMessageTopic: "opentofu",
+      separateMajorMinor: false,
       addLabels: ["tofu:plan"],
       automerge: false,
     },
