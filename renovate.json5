@@ -6,8 +6,10 @@
     ":dependencyDashboard",
   ],
 
-  dependencyDashboard: true,
-  dependencyDashboardTitle: "Renovate Dependency Dashboard",
+  dependencyDashboard: {
+    enabled: true,
+    title: "Renovate Dependency Dashboard",
+  },
 
   // Title template must satisfy the project's mr-title-lint regex:
   // Rendered shape: "chore(deps): Update <dep> to <ver> #52".

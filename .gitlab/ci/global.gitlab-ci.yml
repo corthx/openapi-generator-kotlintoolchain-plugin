@@ -58,7 +58,7 @@ variables:
 # them all. entrypoint: [""] for the same reason as the default image above.
 .renovate-image:
   image:
-    name: ghcr.io/renovatebot/renovate:44.199.1
+    name: ghcr.io/renovatebot/renovate:44.241.0
     entrypoint: [""]
 
 # Per-job tool sets. Adding a tool to mise.toml does not make it available to a
