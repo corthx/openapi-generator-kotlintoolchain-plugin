@@ -91,8 +91,10 @@
       groupName: "github actions",
       commitMessageTopic: "github actions",
     },
+    // github-actions: the only workflow mirrors releases to GitHub on tag
+    // push, so a bad bump just skips a GitHub release entry (re-run fixes it).
     {
-      matchManagers: ["mise", "gradle", "gitlabci", "gitlabci-include"],
+      matchManagers: ["mise", "gradle", "gitlabci", "gitlabci-include", "github-actions"],
       matchUpdateTypes: ["patch", "minor"],
       automerge: true,
       automergeType: "pr",
