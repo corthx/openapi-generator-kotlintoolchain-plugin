@@ -9,6 +9,9 @@
   dependencyDashboard: {
     enabled: true,
     title: "Renovate Dependency Dashboard",
+    // The top-level `labels` below only applies to MRs; the dashboard
+    // issue needs its own.
+    labels: ["dependencies"],
   },
 
   // Title template must satisfy the project's mr-title-lint regex:
