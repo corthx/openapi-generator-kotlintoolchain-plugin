@@ -12,8 +12,8 @@
   },
 
   // Title template must satisfy the project's mr-title-lint regex:
-  // Rendered shape: "chore(deps): Update <dep> to <ver> #52".
-  // The suffix is hardcoded to #52 (the Renovate "Dependency Dashboard"
+  // Rendered shape: "chore(deps): Update <dep> to <ver> #63".
+  // The suffix is hardcoded to #63 (the Renovate "Dependency Dashboard"
   // issue) because Renovate exposes no template field for the dashboard
   // issue's IID. If the dashboard issue is ever recreated and assigned
   // a new IID, update this value accordingly.
@@ -21,7 +21,7 @@
   commitMessageAction: "Update",
   commitMessageTopic: "{{depName}}",
   commitMessageExtra: "to {{newVersion}}",
-  commitMessageSuffix: "#52",
+  commitMessageSuffix: "#63",
 
   commitBodyTable: true,
 
