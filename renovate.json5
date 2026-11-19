@@ -14,14 +14,12 @@
     labels: ["dependencies"],
   },
 
-  // Rendered shape: "chore(deps): Update <dep> to <ver>". No issue number:
-  // referencing the dependency dashboard would add a "mentioned in" note to
-  // it on every Renovate commit, so the MR title lint skips renovate/*
-  // branches instead (see .lint:mr-title:rules).
-  commitMessagePrefix: "chore({{#if isMajor}}deps-major{{else}}deps{{/if}}):",
-  commitMessageAction: "Update",
-  commitMessageTopic: "{{depName}}",
-  commitMessageExtra: "to {{newVersion}}",
+  // "chore(deps): update <dep> to <version>", as in the other projects. No
+  // issue number: the MR title lint skips renovate/* branches (see
+  // .lint:mr-title:rules).
+  semanticCommits: "enabled",
+  semanticCommitType: "chore",
+  semanticCommitScope: "deps",
 
   commitBodyTable: true,
 
@@ -84,12 +82,10 @@
     {
       matchManagers: ["mise"],
       groupName: "mise tools",
-      commitMessageTopic: "mise tools",
     },
     {
       matchManagers: ["github-actions"],
       groupName: "github actions",
-      commitMessageTopic: "github actions",
     },
     // github-actions: the only workflow mirrors releases to GitHub on tag
     // push, so a bad bump just skips a GitHub release entry (re-run fixes it).
@@ -132,7 +128,6 @@
     {
       matchDepNames: ["opentofu", "components/opentofu"],
       groupName: "opentofu",
-      commitMessageTopic: "opentofu",
       separateMajorMinor: false,
       addLabels: ["tofu:plan"],
       automerge: false,
@@ -141,7 +136,6 @@
     {
       matchUpdateTypes: ["major"],
       automerge: false,
-      commitMessagePrefix: "chore(deps-major):",
     },
   ],
 
@@ -149,6 +143,5 @@
     enabled: true,
     schedule: ["at any time"],
     labels: ["security", "dependencies"],
-    commitMessagePrefix: "security(deps):",
   },
 }
