@@ -99,6 +99,21 @@
 .tofu-pipeline-schedule-deps-digest-patterns: &tofu-pipeline-schedule-deps-digest-patterns
   - terraform/live/pipeline-schedule-deps-digest/**/*
 
+# A change to the toolchain, the lint job or a linter config re-lints the whole
+# repo: a diff-only run would skip the hooks of a tool bumped on its own.
+# ktlint reads its rules from .editorconfig.
+.lint-toolchain-patterns: &lint-toolchain-patterns
+  - mise.toml
+  - mise.ci.toml
+  - .mise/**/*
+  - .pre-commit-config.yaml
+  - .gitlab/ci/global.gitlab-ci.yml
+  - .gitlab/ci/lint.gitlab-ci.yml
+  - .editorconfig
+  - .markdownlint-cli2.yaml
+  - .yamllint.yaml
+  - terraform/.tflint.hcl
+
 # --- Composite rule sets (the public API — `!reference` these from jobs) ------
 
 # Replaces the component's own MR-only rule. Renovate's generated titles carry
@@ -140,8 +155,18 @@
 .lint:rules:
   rules:
     - <<: *if-merge-request
+      changes: *lint-toolchain-patterns
+      variables:
+        LINT_TASK: "pre-commit:run:all"
+    - <<: *if-merge-request
+      variables:
+        LINT_TASK: "pre-commit:run -- $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_COMMIT_SHA"
     - <<: *if-default-branch
+      variables:
+        LINT_TASK: "pre-commit:run:all"
     - <<: *if-manual-run
+      variables:
+        LINT_TASK: "pre-commit:run:all"
 
 .lint:renovate-config:rules:
   rules:

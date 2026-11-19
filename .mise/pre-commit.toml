@@ -12,3 +12,7 @@ arg <to> help="Tip git ref" default="HEAD"
 run = '''
 pre-commit run --show-diff-on-failure --from-ref="{{ usage.from }}" --to-ref="{{ usage.to }}"
 '''
+
+["pre-commit:run:all"]
+description = "Run pre-commit linters over every file in the repository"
+run = "pre-commit run --show-diff-on-failure --all-files"

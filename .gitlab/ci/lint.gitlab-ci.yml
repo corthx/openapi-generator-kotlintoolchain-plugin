@@ -20,12 +20,9 @@ lint:
   before_script:
     - !reference [".mise-before_script", before_script]
   script:
-    - |
-      if [ "$CI_PIPELINE_SOURCE" = "merge_request_event" ]; then
-        mise run pre-commit:run -- "$CI_MERGE_REQUEST_DIFF_BASE_SHA" "$CI_COMMIT_SHA"
-      else
-        mise run pre-commit:run
-      fi
+    # Unquoted: LINT_TASK, set per rule in .lint:rules, holds the task and its
+    # arguments.
+    - mise run $LINT_TASK
 
 lint:renovate-config:
   stage: lint
