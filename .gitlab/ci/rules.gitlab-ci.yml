@@ -17,6 +17,9 @@
 .if-merge-request: &if-merge-request
   if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
+.if-merge-request-renovate: &if-merge-request-renovate
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^renovate\//'
+
 .if-merge-request-label-tofu-plan: &if-merge-request-label-tofu-plan
   if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(^|,)tofu:plan(,|$)/'
 
@@ -97,6 +100,14 @@
   - terraform/live/pipeline-schedule-deps-digest/**/*
 
 # --- Composite rule sets (the public API — `!reference` these from jobs) ------
+
+# Replaces the component's own MR-only rule. Renovate's generated titles carry
+# no issue number, so they can never match; there is nothing hand-written to lint.
+.lint:mr-title:rules:
+  rules:
+    - <<: *if-merge-request-renovate
+      when: never
+    - <<: *if-merge-request
 
 # MR pipelines only build when something that can affect the build changed;
 # every other pipeline type always builds.

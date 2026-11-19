@@ -14,17 +14,14 @@
     labels: ["dependencies"],
   },
 
-  // Title template must satisfy the project's mr-title-lint regex:
-  // Rendered shape: "chore(deps): Update <dep> to <ver> #63".
-  // The suffix is hardcoded to #63 (the Renovate "Dependency Dashboard"
-  // issue) because Renovate exposes no template field for the dashboard
-  // issue's IID. If the dashboard issue is ever recreated and assigned
-  // a new IID, update this value accordingly.
+  // Rendered shape: "chore(deps): Update <dep> to <ver>". No issue number:
+  // referencing the dependency dashboard would add a "mentioned in" note to
+  // it on every Renovate commit, so the MR title lint skips renovate/*
+  // branches instead (see .lint:mr-title:rules).
   commitMessagePrefix: "chore({{#if isMajor}}deps-major{{else}}deps{{/if}}):",
   commitMessageAction: "Update",
   commitMessageTopic: "{{depName}}",
   commitMessageExtra: "to {{newVersion}}",
-  commitMessageSuffix: "#63",
 
   commitBodyTable: true,
 

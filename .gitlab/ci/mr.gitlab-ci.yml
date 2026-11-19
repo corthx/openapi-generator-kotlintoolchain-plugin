@@ -4,3 +4,9 @@ include:
   - component: gitlab.com/corthx/mr-title-lint/mr-title-lint@1.0.0
     inputs:
       regex: '^(feat|fix|refactor|docs|style|perf|test|chore|security)(\([a-zA-Z0-9_-]+\))?: [A-Z].{2,71} #[0-9]+$'
+
+# Same job as the include above (the component's default job name). Keys set
+# here are merged over the component's, so only rules: changes.
+mr-title-lint:
+  rules:
+    - !reference [".lint:mr-title:rules", rules]
