@@ -23,6 +23,9 @@ variables:
   MISE_ENV: ci
   MISE_YES: "1"
   PRE_COMMIT_HOME: $CI_PROJECT_DIR/.pre-commit-data
+  # tflint's plugin dir defaults to ~/.tflint.d/plugins, outside
+  # CI_PROJECT_DIR, so GitLab CI could not cache it.
+  TFLINT_PLUGIN_DIR: $CI_PROJECT_DIR/.tflint-data
   RENOVATE_CACHE_DIR: $CI_PROJECT_DIR/.renovate-cache
   # Undocumented Kotlin Toolchain env var (equivalent to --shared-cache-dir).
   # yamllint disable-line rule:line-length
@@ -112,6 +115,20 @@ variables:
         - .pre-commit-config.yaml
     paths:
       - $PRE_COMMIT_HOME/
+    policy: pull-push
+
+# Rulesets fetched by `tflint --init` from the GitHub API, unauthenticated.
+# Uncached, every lint job spends one of the 60 requests/hour GitHub allows the
+# runner's IP, and the job fails once they run out. Keyed on .tflint.hcl, so
+# GitHub is only hit again when Renovate bumps a ruleset.
+.tflint-cache:
+  cache:
+    key:
+      files:
+        - terraform/.tflint.hcl
+      prefix: tflint
+    paths:
+      - $TFLINT_PLUGIN_DIR/
     policy: pull-push
 
 .renovate-cache:

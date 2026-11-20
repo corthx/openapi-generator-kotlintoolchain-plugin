@@ -11,6 +11,7 @@ lint:
   cache:
     - !reference [".mise-cache", cache]
     - !reference [".pre-commit-cache", cache]
+    - !reference [".tflint-cache", cache]
   rules:
     - !reference [".lint:rules", rules]
   variables:
