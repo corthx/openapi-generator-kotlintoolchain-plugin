@@ -72,8 +72,8 @@ module "labels" {
     },
     # Applied by Renovate to vulnerability fixes (renovate.json5).
     "security" = {
-      description = "Issues and changes related to security vulnerabilities, authentication, authorization, or sensitive data handling",
-      color       = "#D9534F",
+      description = "Address a security vulnerability",
+      color       = "#ee0701",
     },
     "tofu:apply" = {
       description = "Applying this label on MR exposes a manual apply for all lives",
