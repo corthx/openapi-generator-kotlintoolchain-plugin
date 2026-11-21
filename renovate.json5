@@ -32,6 +32,10 @@
   // queues legitimate updates under "Rate-Limited" on the dashboard.
   prHourlyLimit: 0,
 
+  // Leaves a week for a broken or compromised release to be caught and pulled
+  // before it reaches us. Security fixes opt out in vulnerabilityAlerts.
+  minimumReleaseAge: "7 days",
+
   rangeStrategy: "pin",
 
   // Renovate ships no native manager for GitLab CI components, so track
@@ -139,8 +143,15 @@
     },
   ],
 
+  // GitLab exposes no vulnerability alerts to Renovate, so OSV is the source.
+  osvVulnerabilityAlerts: true,
   vulnerabilityAlerts: {
     enabled: true,
+    // Fixes go out as soon as they are found: no 7-day wait, and the limits
+    // that hold back regular updates don't apply.
+    minimumReleaseAge: null,
+    prConcurrentLimit: 0,
+    branchConcurrentLimit: 0,
     schedule: ["at any time"],
     labels: ["security", "dependencies"],
   },
